@@ -1,0 +1,45 @@
+# ---------- ข้อมูลลับ / สภาพแวดล้อม ----------
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---------- Node / Frontend ----------
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+npm-debug.log*
+yarn-debug.log*
+
+# ---------- Capacitor / Android ----------
+frontend/android/
+frontend/ios/
+frontend/.gradle/
+
+# ---------- ฐานข้อมูล / ไฟล์ระบบ ----------
+*.sqlite3
+*.db
+.DS_Store
+Thumbs.db
+
+# ---------- IDE ----------
+.vscode/
+.idea/
+*.swp
+.venv/ 
+__pycache__/ 
+.env 
+*.pyc 

@@ -1,0 +1,36 @@
+# Pro-HealthCare — โครงสร้างบริการสำหรับพัฒนา (MySQL 8 + Adminer)
+# รัน: docker compose up -d
+# หยุด: docker compose down          (ลบข้อมูลด้วย: docker compose down -v)
+
+services:
+  db:
+    image: mysql:8
+    container_name: prohealthcare-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-prohealthcare}
+      MYSQL_USER: ${MYSQL_USER:-prohealth}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-prohealthpass}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  adminer:
+    image: adminer:latest
+    container_name: prohealthcare-adminer
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+
+volumes:
+  db_data:
