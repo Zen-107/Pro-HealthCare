@@ -9,7 +9,7 @@ from app.core.database import Base
 from app.models.base import TimestampMixin
 
 
-class Session(TimestampMixin, Base):
+class TherapySession(TimestampMixin, Base):
     """หนึ่งเซสชันฝึกของผู้ป่วย"""
 
     __tablename__ = "sessions"
@@ -29,7 +29,7 @@ class Session(TimestampMixin, Base):
     device_info: Mapped[str | None] = mapped_column(String(255), nullable=True)  # offline sync metadata
 
     def __repr__(self) -> str:
-        return f"<Session id={self.id} patient_id={self.patient_id} status={self.status}>"
+        return f"<TherapySession id={self.id} patient_id={self.patient_id} status={self.status}>"
 
 
 class SessionRep(TimestampMixin, Base):

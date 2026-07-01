@@ -1,27 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
-
-interface PatientWithUser {
-  patient: {
-    id: number;
-    user_id: number;
-    dob: string | null;
-    gender: string | null;
-    height_cm: number | null;
-    weight_kg: number | null;
-    assigned_doctor_id: number | null;
-    medical_notes: string | null;
-  };
-  user: {
-    id: number;
-    email: string;
-    full_name: string;
-    role: string;
-    phone: string | null;
-    is_active: boolean;
-  };
-}
+import type { PatientWithUser } from "../../types";
 
 export default function DoctorDashboard() {
   const [patients, setPatients] = useState<PatientWithUser[]>([]);

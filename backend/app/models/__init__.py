@@ -3,7 +3,7 @@ from app.models.user import User
 from app.models.patient import Patient
 from app.models.exercise import Exercise
 from app.models.exercise_plan import ExercisePlan, PlanItem
-from app.models.session import Session, SessionRep
+from app.models.session import TherapySession, SessionRep
 from app.models.joint_angle import JointAngleRecord
 from app.models.clinical_report import ClinicalReport
 
@@ -13,7 +13,7 @@ __all__ = [
     "Exercise",
     "ExercisePlan",
     "PlanItem",
-    "Session",
+    "TherapySession",
     "SessionRep",
     "JointAngleRecord",
     "ClinicalReport",

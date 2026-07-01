@@ -19,7 +19,7 @@ class ClinicalReport(TimestampMixin, Base):
     )
     session_id: Mapped[int | None] = mapped_column(
         ForeignKey("sessions.id", ondelete="SET NULL"), index=True, nullable=True
-    )
+    )  # FK เชื่อมไปยัง therapy_sessions table
     period_start: Mapped[date | None] = mapped_column(Date, nullable=True)
     period_end: Mapped[date | None] = mapped_column(Date, nullable=True)
     summary_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # ตัวเลข/กราฟ

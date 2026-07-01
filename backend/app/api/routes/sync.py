@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from app.api.deps import CurrentUser, DbSession, get_current_patient_profile
 from app.models.joint_angle import JointAngleRecord
-from app.models.session import Session, SessionRep
+from app.models.session import TherapySession, SessionRep
 from app.schemas.sync import SyncBatchRequest, SyncBatchResult, SyncSessionResult
 
 router = APIRouter()
@@ -27,7 +27,7 @@ def sync_batch(payload: SyncBatchRequest, user: CurrentUser, db: DbSession):
     for s in payload.sessions:
         key = _idempotency_key(s.client_session_id, patient.id)
         # dedupe: ถ้ามีเซสชันที่มี device_info == key อยู่แล้ว ให้ข้าม
-        existing = db.scalar(select(Session).where(Session.device_info == key))
+        existing = db.scalar(select(TherapySession).where(TherapySession.device_info == key))
         if existing:
             results.append(SyncSessionResult(
                 client_session_id=s.client_session_id,
@@ -42,7 +42,7 @@ def sync_batch(payload: SyncBatchRequest, user: CurrentUser, db: DbSession):
             started = s.started_at
             if started.tzinfo is None:
                 started = started.replace(tzinfo=timezone.utc)
-            session = Session(
+            session = TherapySession(
                 patient_id=patient.id,
                 plan_id=s.plan_id,
                 started_at=started,
