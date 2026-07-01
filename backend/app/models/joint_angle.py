@@ -1,6 +1,6 @@
 """ตาราง joint_angle_records — Time-Series มุมข้อต่อแต่ละจุด
 เก็บเฉพาะค่าตัวเลขที่คำนวณแล้ว (ไม่เก็บภาพ/วิดีโอ — ตามหลัก PDPA)"""
-from sqlalchemy import BigInteger, ForeignKey, Numeric, String
+from sqlalchemy import BigInteger, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -12,7 +12,13 @@ class JointAngleRecord(TimestampMixin, Base):
 
     __tablename__ = "joint_angle_records"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # BigInteger บน MySQL (รองรับข้อมูล time-series ปริมาณมาก)
+    # Integer บน SQLite (autoincrement ทำงานได้ — SQLite ต้องการ INTEGER PRIMARY KEY)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    )
     session_id: Mapped[int] = mapped_column(
         ForeignKey("sessions.id", ondelete="CASCADE"), index=True, nullable=False
     )
