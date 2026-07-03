@@ -65,3 +65,11 @@ class JointAngleCreate(BaseModel):
 class JointAngleBatch(BaseModel):
     """ส่งเป็นชุด — รองรับการ stream และ offline sync"""
     angles: list[JointAngleCreate]
+
+
+class PatientStatsOut(BaseModel):
+    """สถิติผู้ป่วย — สำหรับ Dashboard"""
+    total_sessions: int = 0
+    streak_days: int = 0
+    avg_accuracy: float | None = None
+    medals: int = 0

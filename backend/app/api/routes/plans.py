@@ -11,6 +11,7 @@ from app.schemas.plan import (
     ExercisePlanDetail,
     ExercisePlanOut,
     PlanItemOut,
+    PlanStatusUpdate,
 )
 
 router = APIRouter()
@@ -80,18 +81,13 @@ def create_plan(payload: ExercisePlanCreate, user: CurrentUser, db: DbSession):
 
 
 @router.put("/{plan_id}", response_model=ExercisePlanDetail)
-def update_plan_status(plan_id: int, status_value: str, user: CurrentUser, db: DbSession):
+def update_plan_status(plan_id: int, payload: PlanStatusUpdate, user: CurrentUser, db: DbSession):
     """แพทย์: เปลี่ยนสถานะแผน (active/paused/completed ฯลฯ)"""
     if UserRole(user.role) != UserRole.DOCTOR:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="สำหรับแพทย์เท่านั้น")
     plan = db.get(ExercisePlan, plan_id, options=[selectinload(ExercisePlan.items)])
     if plan is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ไม่พบแผนนี้")
-    valid = {"draft", "active", "paused", "completed", "cancelled"}
-    if status_value not in valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="สถานะไม่ถูกต้อง"
-        )
-    plan.status = status_value
+    plan.status = payload.status
     db.commit()
     return plan

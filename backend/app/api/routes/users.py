@@ -56,3 +56,18 @@ def list_my_patients(user: CurrentUser, db: DbSession):
         u = db.get(User, p.user_id)
         out.append(PatientWithUser(patient=p, user=u))
     return out
+
+
+@router.patch("/patients/{patient_id}/assign")
+def assign_doctor(patient_id: int, user: CurrentUser, db: DbSession):
+    """แพทย์: กำหนดตัวเองเป็นผู้ดูแลผู้ป่วยคนนี้"""
+    if UserRole(user.role) != UserRole.DOCTOR:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="สำหรับแพทย์เท่านั้น")
+    patient = db.get(Patient, patient_id)
+    if patient is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ไม่พบผู้ป่วย")
+    patient.assigned_doctor_id = user.id
+    db.commit()
+    db.refresh(patient)
+    u = db.get(User, patient.user_id)
+    return PatientWithUser(patient=patient, user=u)

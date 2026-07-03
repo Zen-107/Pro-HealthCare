@@ -101,7 +101,8 @@ export interface DailyProgress {
 }
 
 export interface PatientStats {
-  streak: number;
-  avg_accuracy: number;
+  total_sessions: number;
+  streak_days: number;
+  avg_accuracy: number | null;
   medals: number;
 }

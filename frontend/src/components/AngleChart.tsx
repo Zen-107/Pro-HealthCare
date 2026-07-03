@@ -1,43 +1,64 @@
 /**
- * MOCK — กราฟมุมข้อต่อแบบ Real-time (สไตล์ Oscilloscope)
- * Step 2: จะเชื่อม Recharts + real data จาก /sessions/{id}/angles
+ * กราฟมุมข้อต่อแบบ Real-time — ดึง time-series จาก /sessions/{id}/angles
  */
+import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tooltip } from "recharts";
+import api from "../api/client";
 import type { AngleDataPoint } from "../types";
 
-// mock data
-const data: AngleDataPoint[] = [
-  { time: 0, angle: 95 },
-  { time: 500, angle: 92 },
-  { time: 1000, angle: 88 },
-  { time: 1500, angle: 85 },
-  { time: 2000, angle: 90 },
-  { time: 2500, angle: 93 },
-  { time: 3000, angle: 88 },
-  { time: 3500, angle: 82 },
-  { time: 4000, angle: 78 },
-  { time: 4500, angle: 80 },
-  { time: 5000, angle: 85 },
-  { time: 5500, angle: 90 },
-];
-
 const TARGET_ANGLE = 90;
+const POLL_MS = 2000;
 
-export default function AngleChart() {
+interface AngleResponse {
+  timestamp_ms: number;
+  joint_name: string;
+  angle_value: number;
+}
+
+export default function AngleChart({ sessionId }: { sessionId: number }) {
+  const [data, setData] = useState<AngleDataPoint[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const res = await api.get<AngleResponse[]>(`/sessions/${sessionId}/angles`);
+        if (!active) return;
+        // เลือก joint แรกที่เจอ (เช่น left_knee) และแปลงเป็นรูปแบบกราฟ
+        const joints = Array.from(new Set(res.data.map((d) => d.joint_name)));
+        const target = joints[0];
+        const points = res.data
+          .filter((d) => d.joint_name === target)
+          .map((d) => ({ time: d.timestamp_ms, angle: d.angle_value }));
+        setData(points);
+      } catch {
+        // ยังไม่มีข้อมูล — ปล่อยว่างไว้
+      }
+    };
+    load();
+    const timer = setInterval(load, POLL_MS);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [sessionId]);
+
   return (
     <div className="card bg-base-100 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">📊 มุมข้อต่อ</h3>
-        <span className="badge badge-ghost badge-sm">Mock Data</span>
+        <span className="badge badge-ghost badge-sm">
+          {data.length > 0 ? `${data.length} จุด` : "รอข้อมูล"}
+        </span>
       </div>
       <div className="rounded-lg bg-base-300 p-2">
         <ResponsiveContainer width="100%" height={130}>
           <LineChart data={data}>
             <XAxis dataKey="time" hide />
-            <YAxis domain={[60, 110]} tick={{ fontSize: 10 }} width={30} />
+            <YAxis domain={[0, 180]} tick={{ fontSize: 10 }} width={30} />
             <Tooltip
               formatter={(v: number) => [`${v}°`, "มุม"]}
-              labelFormatter={(t: number) => `${t / 1000}s`}
+              labelFormatter={(t: number) => `${(t / 1000).toFixed(1)}s`}
               contentStyle={{ fontSize: 12 }}
             />
             <ReferenceLine

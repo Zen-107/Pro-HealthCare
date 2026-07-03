@@ -4,23 +4,28 @@ import { useAuthStore } from "../../store/auth";
 import type { ExercisePlan, PatientStats } from "../../types";
 import api from "../../api/client";
 
-// Mock stats — Step 2 จะเชื่อมจาก API จริง
-const MOCK_STATS: PatientStats = {
-  streak: 7,
-  avg_accuracy: 85,
-  medals: 3,
+const EMPTY_STATS: PatientStats = {
+  total_sessions: 0,
+  streak_days: 0,
+  avg_accuracy: null,
+  medals: 0,
 };
 
 export default function PatientDashboard() {
   const { user } = useAuthStore();
   const [plans, setPlans] = useState<ExercisePlan[]>([]);
+  const [stats, setStats] = useState<PatientStats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .get<ExercisePlan[]>("/plans/mine")
-      .then((r) => setPlans(r.data))
-      .catch(() => {})
+    Promise.all([
+      api.get<ExercisePlan[]>("/plans/mine").then((r) => r.data).catch(() => []),
+      api.get<PatientStats>("/sessions/mine/stats").then((r) => r.data).catch(() => EMPTY_STATS),
+    ])
+      .then(([p, s]) => {
+        setPlans(p);
+        setStats(s);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -43,7 +48,7 @@ export default function PatientDashboard() {
             <span className="text-2xl">🔥</span>
           </div>
           <div className="stat-title">วันติดต่อกัน</div>
-          <div className="stat-value text-secondary">{MOCK_STATS.streak}</div>
+          <div className="stat-value text-secondary">{stats.streak_days}</div>
           <div className="stat-desc">Streak</div>
         </div>
         <div className="stat">
@@ -51,7 +56,9 @@ export default function PatientDashboard() {
             <span className="text-2xl">✅</span>
           </div>
           <div className="stat-title">คะแนนเฉลี่ย</div>
-          <div className="stat-value text-success">{MOCK_STATS.avg_accuracy}%</div>
+          <div className="stat-value text-success">
+            {stats.avg_accuracy !== null ? `${stats.avg_accuracy}%` : "-"}
+          </div>
           <div className="stat-desc">Accuracy Score</div>
         </div>
         <div className="stat">
@@ -59,8 +66,8 @@ export default function PatientDashboard() {
             <span className="text-2xl">🏆</span>
           </div>
           <div className="stat-title">เหรียญ</div>
-          <div className="stat-value text-warning">{MOCK_STATS.medals}</div>
-          <div className="stat-desc">Badges</div>
+          <div className="stat-value text-warning">{stats.medals}</div>
+          <div className="stat-desc">ทำครบ {stats.total_sessions} เซสชัน</div>
         </div>
       </div>
 

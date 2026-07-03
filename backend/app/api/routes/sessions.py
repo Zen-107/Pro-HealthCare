@@ -2,13 +2,14 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.api.deps import CurrentUser, DbSession, get_current_patient_profile
 from app.models.joint_angle import JointAngleRecord
 from app.models.session import TherapySession, SessionRep
 from app.schemas.session import (
     JointAngleBatch,
+    PatientStatsOut,
     SessionCreate,
     SessionOut,
     SessionRepCreate,
@@ -110,3 +111,57 @@ def get_angles(session_id: int, user: CurrentUser, db: DbSession):
         }
         for r in rows
     ]
+
+
+@router.get("/mine/stats", response_model=PatientStatsOut)
+def my_session_stats(user: CurrentUser, db: DbSession):
+    """ผู้ป่วย: สรุปสถิติการฝึก — streak, avg accuracy, total sessions, medals"""
+    patient = get_current_patient_profile(user, db)
+    base = (
+        select(TherapySession)
+        .where(
+            TherapySession.patient_id == patient.id,
+            TherapySession.status == "completed",
+        )
+    )
+    completed_sessions = list(db.scalars(base).all())
+    total_sessions = len(completed_sessions)
+
+    # avg accuracy
+    avg_accuracy = None
+    if completed_sessions:
+        scores = [s.accuracy_score_avg for s in completed_sessions if s.accuracy_score_avg is not None]
+        if scores:
+            avg_accuracy = float(sum(scores) / len(scores))
+
+    # streak: นับจำนวนวันติดต่อกันจากวันนี้ย้อนหลัง
+    streak_days = 0
+    if completed_sessions:
+        session_dates = sorted({s.ended_at.astimezone(timezone.utc).date() for s in completed_sessions if s.ended_at}, reverse=True)
+        today = datetime.now(timezone.utc).date()
+        if session_dates and session_dates[0] == today:
+            streak_days = 1
+            for i in range(1, len(session_dates)):
+                diff = (session_dates[i - 1] - session_dates[i]).days
+                if diff == 1:
+                    streak_days += 1
+                else:
+                    break
+        elif session_dates and (today - session_dates[0]).days <= 1:
+            streak_days = 1
+            for i in range(1, len(session_dates)):
+                diff = (session_dates[i - 1] - session_dates[i]).days
+                if diff == 1:
+                    streak_days += 1
+                else:
+                    break
+
+    # medals: 1 medal ต่อ 3 sessions ที่ completed
+    medals = total_sessions // 3
+
+    return PatientStatsOut(
+        total_sessions=total_sessions,
+        streak_days=streak_days,
+        avg_accuracy=round(avg_accuracy, 1) if avg_accuracy is not None else None,
+        medals=medals,
+    )
